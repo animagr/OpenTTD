@@ -132,6 +132,33 @@ td code, th code { background: var(--code-bg); }
 tbody tr:hover { background: var(--bg-inset); }
 td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
+/* figures and diagrams */
+figure.fig { margin: 1.5em 0; padding: 20px 20px 14px; background: var(--bg-raised);
+             border: 1px solid var(--border-strong); border-radius: var(--radius-m);
+             box-shadow: var(--shadow-s); }
+figure.fig svg { display: block; width: 100%; max-width: 100%; height: auto;
+                 font-family: var(--font-ui); color: var(--text); }
+figure.fig figcaption { margin-top: 12px; padding-top: 10px; font-size: 0.84rem;
+                        color: var(--text-muted); border-top: 1px solid var(--border); }
+.d-box   { fill: var(--bg-raised); stroke: var(--border-strong); stroke-width: 1.5; }
+.d-gate  { fill: #eaf2fd; stroke: var(--accent); stroke-width: 2; }
+.d-state { fill: var(--paper-inset); stroke: var(--border-strong); stroke-width: 1.5; }
+.d-inner { fill: var(--bg-raised); stroke: var(--border); stroke-width: 1; }
+.d-run   { fill: #eaf2fd; stroke: var(--accent); stroke-width: 1.5; }
+.d-idle  { fill: none; stroke: var(--border-strong); stroke-width: 1;
+           stroke-dasharray: 4 4; }
+.d-tick  { fill: var(--paper-inset); stroke: var(--border-strong); stroke-width: 1; }
+.d-t     { fill: var(--text); font-size: 13px; font-weight: 600; }
+.d-ts    { fill: var(--text-muted); font-size: 11px; }
+.d-te    { fill: var(--text-muted); font-size: 11px; font-style: italic; }
+.d-ta    { fill: var(--accent); font-size: 11px; font-weight: 600; }
+.d-edge  { stroke: var(--text-muted); stroke-width: 1.5; fill: none; }
+.d-edgeA { stroke: var(--accent); stroke-width: 2; fill: none; }
+.d-dash  { stroke-dasharray: 5 4; }
+.d-head  { fill: var(--text-muted); }
+.d-headA { fill: var(--accent); }
+.d-lead  { stroke: var(--border-strong); stroke-width: 1; }
+
 /* chips */
 .chip { display: inline-block; padding: 0 8px; border-radius: 999px;
         font-size: 0.75rem; font-weight: 600; }
@@ -194,6 +221,93 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 </blockquote>
 
 <p>That is the constraint. It is why the map is a packed byte array rather than a tree of objects; why nothing changes the world except through a formal "command"; why the random number generator is deliberately predictable; why saved games from 2004 still load. Nearly every "why is it done like <em>that</em>?" in this codebase traces back to determinism.</p>
+
+<h3>The shape of the whole program</h3>
+
+<p>Before the detail, here is the architecture in one picture. Three very different things want to change the world &mdash; you, the AI opponents, and players on other machines &mdash; and all three are forced through a single gate.</p>
+
+<figure class="fig">
+<svg viewBox="0 0 780 530" role="img" aria-label="Architecture diagram: input from the player interface, AI scripts and remote players all funnel into the command system, which is the only thing that writes to the game state; the tick loop advances that state, saveload reads and writes it, and the renderer only reads it.">
+  <defs>
+    <marker id="a1" viewBox="0 0 9 9" refX="8" refY="4.5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0.5 L8.5,4.5 L0,8.5 z" class="d-head"/>
+    </marker>
+    <marker id="a1a" viewBox="0 0 9 9" refX="8" refY="4.5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0.5 L8.5,4.5 L0,8.5 z" class="d-headA"/>
+    </marker>
+  </defs>
+
+  <!-- inputs -->
+  <rect x="20"  y="16" width="220" height="52" rx="6" class="d-box"/>
+  <text x="130" y="39" text-anchor="middle" class="d-t">You</text>
+  <text x="130" y="56" text-anchor="middle" class="d-ts">windows, toolbars, buttons</text>
+
+  <rect x="280" y="16" width="220" height="52" rx="6" class="d-box"/>
+  <text x="390" y="39" text-anchor="middle" class="d-t">AI + GameScripts</text>
+  <text x="390" y="56" text-anchor="middle" class="d-ts">Squirrel, sandboxed</text>
+
+  <rect x="540" y="16" width="220" height="52" rx="6" class="d-box"/>
+  <text x="650" y="39" text-anchor="middle" class="d-t">Other players</text>
+  <text x="650" y="56" text-anchor="middle" class="d-ts">over the network</text>
+
+  <!-- input arrows -->
+  <path d="M130,68 L130,128" class="d-edge" marker-end="url(#a1)"/>
+  <text x="139" y="101" class="d-ts">clicks</text>
+
+  <path d="M390,68 L390,128" class="d-edge" marker-end="url(#a1)"/>
+  <text x="399" y="101" class="d-ts">API call</text>
+
+  <path d="M650,74 L650,122" class="d-edge" marker-end="url(#a1)" marker-start="url(#a1)"/>
+  <text x="659" y="101" class="d-ts">sent + received</text>
+
+  <!-- the gate -->
+  <rect x="20" y="128" width="740" height="62" rx="6" class="d-gate"/>
+  <text x="390" y="152" text-anchor="middle" class="d-t">The command system</text>
+  <text x="390" y="172" text-anchor="middle" class="d-ta">test pass: is it legal, what does it cost? &#8594; execute pass: do it</text>
+
+  <!-- gate to state -->
+  <path d="M390,190 L390,236" class="d-edgeA" marker-end="url(#a1a)"/>
+  <text x="399" y="216" class="d-ta">the only thing that writes</text>
+
+  <!-- game state -->
+  <rect x="20" y="236" width="740" height="128" rx="6" class="d-state"/>
+  <text x="390" y="262" text-anchor="middle" class="d-t">The game state</text>
+  <text x="390" y="280" text-anchor="middle" class="d-ts">everything that must be identical on every machine</text>
+
+  <rect x="48" y="292" width="330" height="52" rx="5" class="d-inner"/>
+  <text x="213" y="313" text-anchor="middle" class="d-t">Tile map</text>
+  <text x="213" y="330" text-anchor="middle" class="d-ts">one flat array &middot; 12 bytes per tile</text>
+
+  <rect x="402" y="292" width="330" height="52" rx="5" class="d-inner"/>
+  <text x="567" y="313" text-anchor="middle" class="d-t">Pools</text>
+  <text x="567" y="330" text-anchor="middle" class="d-ts">vehicles, stations, towns, industries</text>
+
+  <!-- bottom row -->
+  <path d="M140,442 L140,364" class="d-edge" marker-end="url(#a1)"/>
+  <text x="140" y="392" text-anchor="middle" class="d-ts">advances it</text>
+  <text x="140" y="408" text-anchor="middle" class="d-ts">one step</text>
+
+  <path d="M390,442 L390,370" class="d-edge" marker-end="url(#a1)" marker-start="url(#a1)"/>
+  <text x="390" y="400" text-anchor="middle" class="d-ts">writes + restores</text>
+
+  <path d="M640,364 L640,442" class="d-edge d-dash" marker-end="url(#a1)"/>
+  <text x="640" y="392" text-anchor="middle" class="d-te">reads only &mdash;</text>
+  <text x="640" y="408" text-anchor="middle" class="d-te">never writes</text>
+
+  <rect x="20"  y="442" width="240" height="52" rx="6" class="d-box"/>
+  <text x="140" y="465" text-anchor="middle" class="d-t">Tick loop</text>
+  <text x="140" y="482" text-anchor="middle" class="d-ts">~30 &times; per second</text>
+
+  <rect x="270" y="442" width="240" height="52" rx="6" class="d-box"/>
+  <text x="390" y="465" text-anchor="middle" class="d-t">Saved games</text>
+  <text x="390" y="482" text-anchor="middle" class="d-ts">versioned back to 2004</text>
+
+  <rect x="520" y="442" width="240" height="52" rx="6" class="d-box"/>
+  <text x="640" y="465" text-anchor="middle" class="d-t">Renderer</text>
+  <text x="640" y="482" text-anchor="middle" class="d-ts">sprites, viewport, blitter</text>
+</svg>
+<figcaption>Three sources of intent, one gate. Because the command system is the only path that writes to the game state, an AI's action and a human's are indistinguishable by the time they land (&sect;6, &sect;8) &mdash; and a remote player's command can be replayed on your machine to produce your copy of the world (&sect;7). Note the two asymmetries: the tick loop advances the state without any input at all, and the renderer only ever reads it.</figcaption>
+</figure>
 
 <h2 id="sec2"><span class="secnum">2</span>The lay of the land</h2>
 
@@ -441,6 +555,65 @@ Both passes must reach exactly the same verdict and the same price. If the test 
 </code></pre>
 
 <p>At the slowest setting an AI thinks once every sixteen ticks. Difficulty here is not a cheat or a handicap applied to prices &mdash; it is literally how much thinking time the opponent is granted.</p>
+
+<figure class="fig">
+<svg viewBox="0 0 780 215" role="img" aria-label="Timeline diagram: the game loop runs every tick without interruption, while a single AI script runs only in occasional slices, frozen mid-function in between when its opcode budget runs out or when it issues a command.">
+  <text x="86" y="26"  text-anchor="end" class="d-ts">tick</text>
+  <text x="132" y="26" text-anchor="middle" class="d-ts">1</text>
+  <text x="196" y="26" text-anchor="middle" class="d-ts">2</text>
+  <text x="260" y="26" text-anchor="middle" class="d-ts">3</text>
+  <text x="324" y="26" text-anchor="middle" class="d-ts">4</text>
+  <text x="388" y="26" text-anchor="middle" class="d-ts">5</text>
+  <text x="452" y="26" text-anchor="middle" class="d-ts">6</text>
+  <text x="516" y="26" text-anchor="middle" class="d-ts">7</text>
+  <text x="580" y="26" text-anchor="middle" class="d-ts">8</text>
+  <text x="644" y="26" text-anchor="middle" class="d-ts">9</text>
+  <text x="708" y="26" text-anchor="middle" class="d-ts">10</text>
+
+  <text x="86" y="61" text-anchor="end" class="d-t">Game loop</text>
+  <rect x="101" y="40" width="62" height="32" rx="3" class="d-tick"/>
+  <rect x="165" y="40" width="62" height="32" rx="3" class="d-tick"/>
+  <rect x="229" y="40" width="62" height="32" rx="3" class="d-tick"/>
+  <rect x="293" y="40" width="62" height="32" rx="3" class="d-tick"/>
+  <rect x="357" y="40" width="62" height="32" rx="3" class="d-tick"/>
+  <rect x="421" y="40" width="62" height="32" rx="3" class="d-tick"/>
+  <rect x="485" y="40" width="62" height="32" rx="3" class="d-tick"/>
+  <rect x="549" y="40" width="62" height="32" rx="3" class="d-tick"/>
+  <rect x="613" y="40" width="62" height="32" rx="3" class="d-tick"/>
+  <rect x="677" y="40" width="62" height="32" rx="3" class="d-tick"/>
+  <text x="748" y="61" class="d-ts">never stops</text>
+
+  <text x="86" y="121" text-anchor="end" class="d-t">One AI script</text>
+  <rect x="101" y="100" width="62" height="32" rx="3" class="d-run"/>
+  <text x="132" y="120" text-anchor="middle" class="d-ta">runs</text>
+  <rect x="165" y="100" width="62" height="32" rx="3" class="d-idle"/>
+  <rect x="229" y="100" width="62" height="32" rx="3" class="d-idle"/>
+  <rect x="293" y="100" width="62" height="32" rx="3" class="d-run"/>
+  <text x="324" y="120" text-anchor="middle" class="d-ta">runs</text>
+  <rect x="357" y="100" width="62" height="32" rx="3" class="d-idle"/>
+  <rect x="421" y="100" width="62" height="32" rx="3" class="d-idle"/>
+  <rect x="485" y="100" width="62" height="32" rx="3" class="d-idle"/>
+  <rect x="549" y="100" width="62" height="32" rx="3" class="d-run"/>
+  <text x="580" y="120" text-anchor="middle" class="d-ta">runs</text>
+  <rect x="613" y="100" width="62" height="32" rx="3" class="d-idle"/>
+  <rect x="677" y="100" width="62" height="32" rx="3" class="d-idle"/>
+  <text x="748" y="121" class="d-te">frozen</text>
+
+  <path d="M132,132 L132,150" class="d-lead"/>
+  <path d="M324,132 L324,150" class="d-lead"/>
+  <path d="M580,132 L580,150" class="d-lead"/>
+
+  <text x="132" y="165" text-anchor="middle" class="d-ts">10,000 opcodes spent &mdash;</text>
+  <text x="132" y="180" text-anchor="middle" class="d-ts">suspended mid-function</text>
+
+  <text x="324" y="165" text-anchor="middle" class="d-ts">resumes on the exact</text>
+  <text x="324" y="180" text-anchor="middle" class="d-ts">line it stopped on</text>
+
+  <text x="580" y="165" text-anchor="middle" class="d-ts">issues a command &mdash;</text>
+  <text x="580" y="180" text-anchor="middle" class="d-ts">deliberately paused again</text>
+</svg>
+<figcaption>The script never runs to completion. Dashed cells are ticks where it exists but is frozen &mdash; its call stack intact, waiting to be resumed. Two different things end a slice: exhausting the opcode budget (a safety limit), or issuing a command (a deliberate throttle). Meanwhile the game loop above it never pauses, which is the entire point: a badly written AI cannot hang the game.</figcaption>
+</figure>
 
 <h3>8.4 &nbsp;Two kinds of script, and a safety net</h3>
 
