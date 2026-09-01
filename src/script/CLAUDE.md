@@ -43,6 +43,30 @@ Hand-written exceptions are `{ai,game}/{ai,game}_controller.sq.hpp`, which do li
 
 The API docs published for script authors are built by Doxygen from `Doxyfile_AI.in` / `Doxyfile_GS.in`, fed through [api/doxygen_filter.sh](api/doxygen_filter.sh) and its awk script — that filter is what rewrites `Script*` class names into the `AI*` / `GS*` names authors see. Note the style exception from [../../CODINGSTYLE.md](../../CODINGSTYLE.md): NoAI `.hpp` files use `//!<` for single-line member comments, not `///<`.
 
-## Testing
+## Scripts persist their own state
 
-[../../regression/](../../regression/) is the real test of this directory — it drives the API from Squirrel and diffs against recorded output. See [../../regression/CLAUDE.md](../../regression/CLAUDE.md). There is also `test_script_admin.cpp` in [../tests/](../tests/).
+A script's memory is not reconstructed from the map on load — it is saved into the savegame. A script may implement `Save()`, returning a table, and `Load(version, data)` to read it back. `ScriptInstance::SaveObject` in [script_instance.cpp](script_instance.cpp) enforces the contract:
+
+- Storable types are integer, string, array, table, bool and null. Nesting is capped at **25 levels** (`SQUIRREL_MAX_DEPTH`); exceeding it logs *"Savedata can only be nested to 25 deep. No data saved."*
+- Class instances are rejected unless the underlying `ScriptObject` implements its own `SaveObject`; otherwise the script gets *"You tried to save an unsupported type. No data saved."*
+- `Save()` runs on the main thread and **cannot issue commands** — only read-only API calls.
+- It is called while the script is mid-execution, at whatever point the fair scheduler happens to be at, so a script that mutates the same structures it saves has a genuine race with itself.
+
+On load, OpenTTD walks a fallback chain: the exact same script version, then the newest version whose `MinVersionToLoad()` accepts the saved data, then the newest version regardless, then a random script, and finally the built-in **dummy** script. That chain is why removing a published API can strand a savegame rather than merely a script.
+
+Pending events are not saved. A script that cares about them has to serialise them itself.
+
+## Testing and debugging a script
+
+[../../regression/](../../regression/) is the real automated test of this directory — it drives the API from Squirrel and diffs against recorded output. See [../../regression/CLAUDE.md](../../regression/CLAUDE.md). There is also `test_script_admin.cpp` in [../tests/](../tests/).
+
+For interactive work there is a set of console commands and a debug window:
+
+| Tool | Use |
+| --- | --- |
+| `list_ai`, `start_ai <name>`, `stop_ai`, `reload_ai`, `rescan_ai` | Console commands to run one script without waiting for a company slot |
+| `-d script=5` on the command line, or `debug_level script=5` in the console | Route script logging to stdout; the regression runner uses level 2 |
+| AI/GS Debug window | Per-script log output, and a reload button that restarts a script from disk without restarting the game |
+| `set gui.ai_developer_tools 1` | Unlocks break-on-log-message in the debug window and `ScriptController::Break()` |
+
+`gui.ai_developer_tools` defaults to off and is an expert-category setting, which is why those controls are invisible until it is enabled.

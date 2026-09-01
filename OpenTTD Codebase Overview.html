@@ -632,7 +632,21 @@ Because that mistake is easy to make and catastrophic, it is checked by a script
 
 <p>The trick that makes this affordable is a set of <strong>compatibility scripts</strong>: small Squirrel files, one per old version, loaded before the AI starts. Each one patches the current API back into the shape that version expected &mdash; restoring renamed functions, re-adding removed ones, adjusting changed return values. The file for version 15 describes itself plainly: <em>"code to downgrade the API from 16 to 15."</em> Rename an API function today, and you add a line to those files so that a decade of published AIs keep working.</p>
 
-<h3>8.6 &nbsp;Following one action all the way through</h3>
+<h3>8.6 &nbsp;An AI's memory is saved too</h3>
+
+<p>A script accumulates knowledge as it plays &mdash; which station serves which industry, what it is halfway through building, where it has already looked. None of that can be rebuilt by re-reading the map, so it goes into the savegame with everything else.</p>
+
+<p>A script implements two functions for this: <code>Save()</code> returns a table of whatever it wants to keep, and <code>Load(version, data)</code> receives it back. The rules are tighter than they first appear:</p>
+
+<ul>
+<li>Only plain data can be stored &mdash; integers, strings, booleans, null, and arrays or tables of those, nested at most <strong>25 levels deep</strong>. Live objects are rejected.</li>
+<li><code>Save()</code> is called <em>while the script is running</em>, at whatever line the scheduler happened to freeze it on &mdash; possibly halfway through rebuilding the very structure it is being asked to hand over.</li>
+<li>It may read the game but not change it. Issuing a command from inside <code>Save()</code> is not allowed.</li>
+</ul>
+
+<p>Loading is where it gets interesting, because the script that saved the game may not be installed any more. OpenTTD walks a fallback chain: the exact version that saved it, then the newest version that declares it can read that far back, then the newest version at all, then any random AI &mdash; and finally a built-in <strong>dummy</strong> that does nothing but keep the company alive. A saved game always loads; the company may simply be inherited by a stranger.</p>
+
+<h3>8.7 &nbsp;Following one action all the way through</h3>
 
 <p>Putting the whole chain together &mdash; here is what happens when an AI decides to build a bus station:</p>
 
