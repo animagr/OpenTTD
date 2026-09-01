@@ -1,0 +1,603 @@
+<title>How OpenTTD Works</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #faf7f0;
+  --bg-raised: #ffffff;
+  --bg-overlay: #ffffff;
+  --bg-inset: #f6f7f8;
+  --paper-inset: #f2eee3;
+  --border: #ebedf0;
+  --border-strong: #d4d4d4;
+  --text: #222222;
+  --text-muted: #707070;
+  --text-faint: #ababab;
+  --text-on-accent: #ffffff;
+  --accent: #4c8ce5;
+  --accent-hover: #3a72c4;
+  --selection: hsla(215, 75%, 60%, 0.22);
+  --highlight: rgba(255, 208, 0, 0.4);
+  --success: #0cb54f;
+  --warning: #d96c00;
+  --error: #e4374b;
+  --info: #086ddd;
+  --red: #e4374b;
+  --orange: #d96c00;
+  --yellow: #bd8e37;
+  --green: #0cb54f;
+  --cyan: #2db7b5;
+  --blue: #086ddd;
+  --purple: #876be0;
+  --pink: #c32b74;
+  --code-bg: #e8e2d4;
+  --code-border: #d6d0c2;
+  --shadow-s: 0 1px 2px rgba(0, 0, 0, 0.028), 0 3.4px 6.7px rgba(0, 0, 0, 0.042),
+              0 15px 30px rgba(0, 0, 0, 0.07);
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Ubuntu, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", Menlo, SFMono-Regular, Consolas, "Roboto Mono", monospace;
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --radius-l: 10px;
+}
+
+* { box-sizing: border-box; }
+::selection { background: var(--selection); }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--text);
+       font-family: var(--font-ui); font-size: 1rem; line-height: 1.5; }
+
+/* layout */
+.layout { display: flex; max-width: 1280px; margin: 0 auto; }
+nav.toc { position: sticky; top: 0; align-self: flex-start; width: 250px; flex: 0 0 250px;
+          max-height: 100vh; overflow-y: auto; padding: 28px 16px 40px 24px;
+          font-size: 0.85rem; border-right: 1px solid var(--border-strong); }
+nav.toc .toc-title { font-weight: 600; color: var(--text-faint); text-transform: uppercase;
+                     letter-spacing: 0.08em; font-size: 0.72rem; margin-bottom: 10px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; }
+nav.toc a { display: block; padding: 4px 8px; color: var(--text-muted); text-decoration: none;
+            border-radius: var(--radius-s); }
+nav.toc a:hover { color: var(--accent); background: var(--paper-inset); }
+nav.toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+nav.toc a .num { color: var(--text-faint); font-family: var(--font-mono);
+                 font-size: 0.75rem; margin-right: 6px; }
+main { flex: 1; min-width: 0; padding: 40px 48px 96px; max-width: 860px; }
+@media (max-width: 900px) {
+  .layout { flex-direction: column; }
+  nav.toc { position: static; width: auto; flex: none; max-height: none;
+            border-right: none; border-bottom: 1px solid var(--border-strong); }
+  main { padding: 24px 20px 64px; }
+}
+
+/* cover */
+header.cover { border-bottom: 3px double var(--border-strong);
+               padding-bottom: 20px; margin-bottom: 32px; }
+header.cover h1 { font-size: 1.9rem; margin: 0 0 6px; line-height: 1.15; text-wrap: balance; }
+header.cover .subtitle { color: var(--text-muted); font-size: 1.05rem; margin: 0 0 12px; }
+header.cover .meta { color: var(--text-faint); font-size: 0.8rem; font-family: var(--font-mono); }
+
+/* typography */
+h2 { font-size: 1.5rem; font-weight: 600; color: var(--text); margin: 3rem 0 0.8rem;
+     padding-bottom: 0.3rem; border-bottom: 1px solid var(--border-strong); text-wrap: balance; }
+h2 .secnum { color: var(--accent); font-family: var(--font-mono);
+             font-size: 1.1rem; margin-right: 10px; }
+h3 { font-size: 1.2rem; font-weight: 600; color: var(--accent); margin: 2rem 0 0.6rem; text-wrap: balance; }
+h4 { font-size: 1.1rem; font-weight: 600; color: var(--yellow); margin: 1.5rem 0 0.5rem; }
+h5 { font-size: 1rem; font-weight: 600; color: var(--red); margin: 1.2rem 0 0.4rem; }
+h6 { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); margin: 1.2rem 0 0.4rem; }
+p { margin: 0.7em 0; }
+strong { color: var(--pink); font-weight: 600; }
+em { color: var(--pink); }
+a { color: var(--accent); text-decoration: underline; }
+a:hover { color: var(--accent-hover); }
+hr { border: none; border-top: 1px solid var(--border-strong); margin: 2.5rem 0; }
+ul, ol { padding-left: 1.5em; margin: 0.7em 0; }
+li { margin: 0.25em 0; }
+
+blockquote { margin: 1em 0; padding: 0.6em 1em; border-left: 3px solid var(--green);
+             color: var(--green); background: var(--bg-raised);
+             border-radius: 0 var(--radius-s) var(--radius-s) 0; box-shadow: var(--shadow-s); }
+blockquote p { margin: 0.3em 0; }
+
+.callout { margin: 1em 0; padding: 0.7em 1em; border-left: 3px solid var(--warning);
+           background: var(--bg-raised); border-radius: 0 var(--radius-s) var(--radius-s) 0;
+           font-size: 0.95rem; box-shadow: var(--shadow-s); }
+.callout.warn { border-left-color: var(--error); }
+.callout .co-label { font-weight: 600; font-size: 0.78rem; letter-spacing: 0.06em;
+                     text-transform: uppercase; display: block; margin-bottom: 2px;
+                     color: var(--warning); }
+.callout.warn .co-label { color: var(--error); }
+
+/* code */
+code { font-family: var(--font-mono); font-size: 0.86em; background: var(--code-bg);
+       padding: 0.08em 0.35em; border-radius: var(--radius-s); color: var(--text); }
+pre { background: var(--code-bg); border: 1px solid var(--code-border);
+      border-radius: var(--radius-m); padding: 12px 16px; overflow-x: auto;
+      margin: 0.9em 0; line-height: 1.45; }
+pre code { background: none; padding: 0; font-size: 0.82rem; display: block; }
+pre .c { color: var(--text-muted); font-style: italic; }
+pre .k { color: var(--purple); font-weight: 600; }
+pre .n { color: var(--orange); }
+pre .p { color: var(--blue); }
+pre .m { color: var(--yellow); font-weight: 600; }
+
+/* tables */
+.tablewrap { overflow-x: auto; margin: 0.9em 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem;
+        background: var(--bg-raised); border: 1px solid var(--border-strong);
+        box-shadow: var(--shadow-s); }
+th { text-align: left; background: var(--bg-inset); font-weight: 600; padding: 7px 10px;
+     border: 1px solid var(--border-strong); white-space: nowrap; }
+td { padding: 6px 10px; border: 1px solid var(--border); vertical-align: top; }
+td code, th code { background: var(--code-bg); }
+tbody tr:hover { background: var(--bg-inset); }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* chips */
+.chip { display: inline-block; padding: 0 8px; border-radius: 999px;
+        font-size: 0.75rem; font-weight: 600; }
+.chip.ok  { background: #bde1d3; color: #1d694b; }
+.chip.no  { background: #f5d1d5; color: #94222e; }
+.chip.mid { background: #ede3cf; color: #7a5a20; }
+
+@media print {
+  nav.toc { display: none; }
+  main { max-width: none; padding: 0; }
+  table, blockquote, .callout { box-shadow: none; }
+  pre { white-space: pre-wrap; }
+  h2 { break-after: avoid; }
+  table, pre { break-inside: avoid; }
+}
+</style>
+
+<div class="layout">
+<nav class="toc" aria-label="Table of contents">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#sec1"><span class="num">1</span>What kind of program this is</a></li>
+    <li><a href="#sec2"><span class="num">2</span>The lay of the land</a></li>
+    <li><a href="#sec3"><span class="num">3</span>The heartbeat</a></li>
+    <li><a href="#sec4"><span class="num">4</span>The world is one big array</a></li>
+    <li><a href="#sec5"><span class="num">5</span>Pools: everything that moves</a></li>
+    <li><a href="#sec6"><span class="num">6</span>Commands</a></li>
+    <li><a href="#sec7"><span class="num">7</span>Determinism rules everything</a></li>
+    <li><a href="#sec8"><span class="num">8</span>How the AI works</a></li>
+    <li><a href="#sec9"><span class="num">9</span>Pathfinding</a></li>
+    <li><a href="#sec10"><span class="num">10</span>Cargo and the economy</a></li>
+    <li><a href="#sec11"><span class="num">11</span>Drawing the world</a></li>
+    <li><a href="#sec12"><span class="num">12</span>Text, settings, generated code</a></li>
+    <li><a href="#sec13"><span class="num">13</span>NewGRF: rewriting the game</a></li>
+    <li><a href="#sec14"><span class="num">14</span>Saving and loading</a></li>
+    <li><a href="#sec15"><span class="num">15</span>Where to start reading</a></li>
+  </ol>
+</nav>
+<main>
+<header class="cover">
+  <h1>How OpenTTD Works</h1>
+  <p class="subtitle">A plain-language tour of a 410,000-line simulation game &mdash; written for programmers who have never touched C++ or this codebase.</p>
+  <p class="meta">OpenTTD master &middot; 1,383 files &middot; C++20 &middot; compiled from the source tree</p>
+</header>
+
+<p>OpenTTD is an open-source reimplementation of <em>Transport Tycoon Deluxe</em>: you build railways, roads, airports and shipping lanes, and haul cargo between towns and industries for money. This page is about the <strong>program</strong>, not the game &mdash; how 410,000 lines of C++ are organised, and why they are organised that way.</p>
+
+<p>You do not need to know C++. Where a C++ idiom matters, it is explained in passing. What you do need is the willingness to accept one strange idea early, because almost every design decision in this codebase follows from it.</p>
+
+<h2 id="sec1"><span class="secnum">1</span>What kind of program this is</h2>
+
+<p>Most applications you have worked on are <em>reactive</em>: something happens (a click, a request), code runs, state changes, the screen updates. Idle programs do nothing.</p>
+
+<p>OpenTTD is not like that. It is a <strong>simulation</strong> that advances whether or not you touch it. Trains keep moving, towns keep growing, industries keep producing, competitors keep building. The program's job is to advance one enormous shared world &mdash; millions of map tiles, thousands of vehicles, hundreds of stations &mdash; in small fixed steps, forever.</p>
+
+<p>Now add the requirement that makes it genuinely hard:</p>
+
+<blockquote>
+<p>In a multiplayer game, every player's computer runs its own complete copy of the simulation. Nobody sends world state over the network. Each machine must independently compute <em>bit-for-bit identical</em> results, forever, or the game falls apart.</p>
+</blockquote>
+
+<p>That is the constraint. It is why the map is a packed byte array rather than a tree of objects; why nothing changes the world except through a formal "command"; why the random number generator is deliberately predictable; why saved games from 2004 still load. Nearly every "why is it done like <em>that</em>?" in this codebase traces back to determinism.</p>
+
+<h2 id="sec2"><span class="secnum">2</span>The lay of the land</h2>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Measure</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Source files</td><td class="num">1,383</td></tr>
+<tr><td>Lines of code</td><td class="num">411,139</td></tr>
+<tr><td>Language</td><td>C++20, built with CMake</td></tr>
+<tr><td>Largest single file</td><td><code>station_cmd.cpp</code> &mdash; 4,638 lines</td></tr>
+<tr><td>Most-included header</td><td><code>stdafx.h</code> &mdash; pulled in by 556 files</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>C++ in sixty seconds, if you need it</h3>
+
+<p>C++ splits code into two kinds of file. A <strong>header</strong> (<code>.h</code> or <code>.hpp</code>) declares what exists &mdash; the names, types and shapes of things &mdash; and other files "include" it to learn about them. A <strong>source file</strong> (<code>.cpp</code>) contains the actual implementation. When one file uses another's function, it includes that file's header.</p>
+
+<p>Two consequences show up constantly here. Including a header is a literal textual paste, so a widely-included header like <code>stdafx.h</code> makes 556 files recompile when it changes. And unlike Python or JavaScript, nothing is discovered automatically: every source file must be listed by hand in the build configuration, or it is simply never compiled &mdash; with no error at all.</p>
+
+<h3>Where things live</h3>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Directory</th><th>What is in it</th></tr></thead>
+<tbody>
+<tr><td><code>src/</code></td><td>All game code. Everything below is a subdirectory of it.</td></tr>
+<tr><td><code>src/core/</code></td><td>Foundations &mdash; containers, bit maths, the object pools, safe integers.</td></tr>
+<tr><td><code>src/saveload/</code></td><td>Reading and writing saved games, including migration from old versions.</td></tr>
+<tr><td><code>src/script/</code></td><td>The scripting language runtime and the API that AI opponents call.</td></tr>
+<tr><td><code>src/network/</code></td><td>Multiplayer, server listing, mod downloads, the admin port.</td></tr>
+<tr><td><code>src/newgrf/</code></td><td>Loading user-made content that modifies the game.</td></tr>
+<tr><td><code>src/pathfinder/</code></td><td>How vehicles work out which way to go.</td></tr>
+<tr><td><code>src/linkgraph/</code></td><td>Deciding where cargo wants to travel across your whole network.</td></tr>
+<tr><td><code>src/lang/</code></td><td>Every piece of text the game displays, in 66 languages.</td></tr>
+<tr><td><code>src/table/</code></td><td>Static data &mdash; every vehicle, industry, price and airport layout.</td></tr>
+<tr><td><code>src/widgets/</code>, <code>src/video/</code>, <code>src/blitter/</code></td><td>The user interface and the code that puts pixels on screen.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Filenames tell you what a file does</h3>
+
+<p>This is the single most useful orientation trick in the codebase. Subsystems are spread across a family of files sharing a prefix, and the <em>suffix</em> tells you the role. Once you know the pattern, you can navigate without searching.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Suffix</th><th>Contains</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><code>_type.h</code></td><td>Small type definitions and enumerations. Cheap to include.</td><td><code>vehicle_type.h</code></td></tr>
+<tr><td><code>_base.h</code></td><td>The main data structure itself.</td><td><code>vehicle_base.h</code></td></tr>
+<tr><td><code>_func.h</code></td><td>Declarations of functions that operate on it.</td><td><code>vehicle_func.h</code></td></tr>
+<tr><td><code>_map.h</code></td><td>Reading and writing the packed bits of a map tile.</td><td><code>rail_map.h</code></td></tr>
+<tr><td><code>_cmd.cpp</code></td><td>Logic that <em>changes</em> the game world.</td><td><code>train_cmd.cpp</code></td></tr>
+<tr><td><code>_gui.cpp</code></td><td>Windows and buttons. Never changes the world directly.</td><td><code>train_gui.cpp</code></td></tr>
+<tr><td><code>_sl.cpp</code></td><td>Saving and loading that subsystem.</td><td><code>vehicle_sl.cpp</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The split between <code>_cmd</code> and <code>_gui</code> is a real architectural boundary, not just a naming habit. Interface code <em>asks</em> for things to happen; only command code makes them happen. Section 6 explains why.</p>
+
+<h2 id="sec3"><span class="secnum">3</span>The heartbeat</h2>
+
+<p>At the centre of the program is a loop that runs roughly 30 times per second. Each pass is called a <strong>tick</strong>, and a tick advances the entire world by one step. The function is <code>StateGameLoop()</code>, and reading it is the fastest way to understand what the game actually <em>does</em>:</p>
+
+<pre><code>AnimateAnimatedTiles();       <span class="c">// level crossings, windmills, animated industry</span>
+TimerManager&lt;TimerGameCalendar&gt;::Elapsed({});
+TimerManager&lt;TimerGameEconomy&gt;::Elapsed({});
+TimerManager&lt;TimerGameTick&gt;::Elapsed(1);
+RunTileLoop();                <span class="c">// trees grow, towns spread, fields appear</span>
+CallVehicleTicks();           <span class="c">// every train, lorry, ship and plane moves</span>
+CallLandscapeTick();          <span class="c">// industries produce cargo</span>
+AI::GameLoop();               <span class="c">// give the AI opponents a slice of time</span>
+Game::GameLoop();             <span class="c">// and the scenario script, if any</span>
+</code></pre>
+
+<p>That is the whole simulation, in order, every tick. Everything else in the codebase is either called from one of those lines, or exists to draw the result on screen.</p>
+
+<p>Note what is <em>not</em> there: no rendering. Drawing happens on a separate schedule, reading the world state without changing it. If the display cannot keep up, the simulation is unaffected &mdash; which matters, because all machines in a multiplayer game must tick in lockstep regardless of their frame rate.</p>
+
+<h3>Four different clocks</h3>
+
+<p>Confusingly but usefully, the game tracks time four separate ways, and picking the wrong one is a common bug.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Clock</th><th>Measures</th><th>Used for</th></tr></thead>
+<tbody>
+<tr><td>Tick</td><td>Simulation steps</td><td>Vehicle movement, anything needing fine granularity</td></tr>
+<tr><td>Calendar</td><td>In-game dates, with leap years</td><td>Vehicle introduction dates, the displayed date</td></tr>
+<tr><td>Economy</td><td>Fixed 30-day months, 360-day years</td><td>Finances, cargo payments, company accounts</td></tr>
+<tr><td>Realtime</td><td>Actual wall-clock seconds</td><td>Interface only &mdash; tooltips, animations, autosave</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Calendar and economy time used to be the same thing and can now diverge, which is why they are separate. Realtime is the dangerous one: it must never influence the simulation, because two players' clocks are never identical.</p>
+
+<h2 id="sec4"><span class="secnum">4</span>The world is one big array</h2>
+
+<p>The map is not a grid of objects. It is a flat array of small fixed-size records, and a tile reference (<code>TileIndex</code>) is just an index into it.</p>
+
+<p>Each tile occupies <strong>12 bytes</strong>, split across two arrays:</p>
+
+<pre><code><span class="k">struct</span> <span class="m">TileBase</span> {          <span class="c">// 8 bytes, every tile</span>
+    <span class="m">uint8_t</span>  type;         <span class="c">// what this tile IS (rail, road, water, house...)</span>
+    <span class="m">uint8_t</span>  height;       <span class="c">// height of the northern corner</span>
+    <span class="m">uint16_t</span> m2;           <span class="c">// usually an index to a town/industry/station</span>
+    <span class="m">uint8_t</span>  m1, m3, m4, m5;  <span class="c">// general purpose bits</span>
+};
+<span class="k">struct</span> <span class="m">TileExtended</span> {      <span class="c">// 4 more bytes</span>
+    <span class="m">uint8_t</span>  m6, m7;
+    <span class="m">uint16_t</span> m8;
+};
+</code></pre>
+
+<p>Those deliberately meaningless names &mdash; <code>m1</code> through <code>m8</code> &mdash; are raw storage. What any given bit means depends entirely on the tile's <code>type</code>. On a railway tile, some bits in <code>m5</code> describe which track pieces are present; on a house tile the same bits mean something completely different.</p>
+
+<p>The reason is arithmetic. The largest map is 4,096 &times; 4,096 tiles &mdash; nearly <strong>16.8 million tiles</strong>. At 12 bytes each that is about 192 MB of map, and it must be walked constantly and saved to disk. A conventional object per tile, with a virtual function table and a pointer or two, would cost several times that and destroy cache locality in the tightest loops in the program.</p>
+
+<div class="callout">
+<span class="co-label">The rule this creates</span>
+Never read or write those bytes directly. Every tile type provides accessor functions in its <code>*_map.h</code> file &mdash; <code>IsTileType(tile, MP_RAILWAY)</code>, <code>GetTrackBits(tile)</code>, <code>SetTileOwner(tile, owner)</code>. They encapsulate the bit layout, which is documented in <code>docs/landscape.html</code>. Poking at <code>m5</code> by hand is how you corrupt a map silently.
+</div>
+
+<h2 id="sec5"><span class="secnum">5</span>Pools: everything that moves</h2>
+
+<p>Tiles cover static terrain. Things with identity and a lifetime &mdash; vehicles, stations, towns, industries, orders, companies &mdash; live in <strong>pools</strong>.</p>
+
+<p>A pool is a sparse array with stable index-based IDs. Create a vehicle and it takes the lowest free slot; delete it and the slot is freed for reuse. The ID is a plain number, which is precisely the point: it can be written into a saved game, sent over the network, and stored in a map tile's <code>m2</code> field, and it will still mean the same thing when read back. A memory pointer could do none of that.</p>
+
+<pre><code><span class="k">struct</span> <span class="m">Vehicle</span> : <span class="m">VehiclePool</span>::<span class="m">PoolItem</span>&lt;&amp;_vehicle_pool&gt;, <span class="m">BaseVehicle</span>, <span class="m">BaseConsist</span> { ... };
+</code></pre>
+
+<p>That first line says "Vehicle is an item in the vehicle pool" &mdash; C++ inheritance used to bolt on the pool machinery. The practical consequences for anyone reading the code:</p>
+
+<ul>
+<li>IDs are typed (<code>VehicleID</code>, <code>StationID</code>, <code>TownID</code>), not bare integers, so you cannot accidentally pass a station where a town belongs.</li>
+<li>Each has an explicit <code>::Invalid()</code> value rather than using zero or &minus;1.</li>
+<li>Pools are <em>holey</em>. Slot 5 existing does not mean slot 4 does. Always iterate with the pool's own iterator, never a counting loop.</li>
+</ul>
+
+<h2 id="sec6"><span class="secnum">6</span>Commands</h2>
+
+<p>Here is the rule that shapes the whole program: <strong>nothing changes the game world except through a command.</strong> Not the interface, not the AI, not the network layer. Building a single piece of track is a command. So is renaming a station, buying a vehicle, or paying a loan.</p>
+
+<p>Every command is written to run in two passes:</p>
+
+<ol>
+<li><strong>Test pass.</strong> Work out whether this is legal and what it would cost &mdash; but change nothing.</li>
+<li><strong>Execute pass.</strong> Do it for real.</li>
+</ol>
+
+<p>The same function handles both, distinguished by a flag:</p>
+
+<pre><code><span class="m">CommandCost</span> CmdBuildSingleRail(<span class="m">DoCommandFlags</span> flags, <span class="m">TileIndex</span> tile, ...)
+{
+    <span class="k">if</span> (!IsTileFlat(tile)) <span class="k">return</span> <span class="m">CommandCost</span>(STR_ERROR_FLAT_LAND_REQUIRED);
+
+    <span class="c">// only actually modify the world on the execute pass</span>
+    <span class="k">if</span> (flags.Test(<span class="m">DoCommandFlag</span>::Execute)) {
+        MakeRailNormal(tile, ...);
+        MarkTileDirtyByTile(tile);
+    }
+    <span class="k">return</span> <span class="m">CommandCost</span>(EXPENSES_CONSTRUCTION, cost);
+}
+</code></pre>
+
+<p>This buys two things at once. It gives the player a cost estimate and a red error message before committing &mdash; the test pass is what runs as you drag a tool across the map. And it gives the network layer a way to validate an incoming action before broadcasting it.</p>
+
+<div class="callout warn">
+<span class="co-label">The classic bug</span>
+Both passes must reach exactly the same verdict and the same price. If the test says "yes, &pound;480" and the execute then fails or charges &pound;500, some machines apply the change and others do not &mdash; and the multiplayer game breaks apart. Any condition checked in one pass must be checked in both.
+</div>
+
+<h2 id="sec7"><span class="secnum">7</span>Determinism rules everything</h2>
+
+<p>Multiplayer works by sending a saved game to each joining client, then broadcasting only <em>commands</em> &mdash; each stamped with the exact tick it must execute on. Between commands, every machine simulates independently and must arrive at the same state. When they do not, it is called a <strong>desync</strong>, and it is the most feared class of bug in the project.</p>
+
+<p>This produces a distinction that runs through the entire codebase: some state is part of the simulation, and some belongs only to the person sitting at this particular computer.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Variable</th><th>Kind</th><th>Safe to read in command code?</th></tr></thead>
+<tbody>
+<tr><td><code>_settings_game</code></td><td>Simulation &mdash; saved, identical everywhere</td><td><span class="chip ok">yes</span></td></tr>
+<tr><td><code>_current_company</code></td><td>Simulation &mdash; who this command acts for</td><td><span class="chip ok">yes</span></td></tr>
+<tr><td><code>_settings_client</code></td><td>Local &mdash; this person's preferences</td><td><span class="chip no">never</span></td></tr>
+<tr><td><code>_local_company</code></td><td>Local &mdash; who this person plays as</td><td><span class="chip no">never</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Anything unpredictable is likewise banned from the simulation: real time, uninitialised memory, pointer addresses, floating-point maths, the iteration order of a hash table. Money is stored as a 64-bit integer with overflow protection, never a floating-point number &mdash; partly for the usual rounding reasons, but also because floating-point results can differ between processors.</p>
+
+<h3>The two opposite reasons to ban <code>rand()</code></h3>
+
+<p>OpenTTD forbids the standard random number generator, and the reason is the opposite of the usual one. Most codebases ban it because it is <em>too predictable</em> for security. OpenTTD bans it because it is <em>not predictable enough</em>.</p>
+
+<p>The simulation uses a seeded generator whose state is saved in the game file, so every machine draws the identical sequence of "random" numbers. Meanwhile the network authentication code genuinely does need unpredictability, and uses a real cryptographic generator. Two rules, two code paths &mdash; and applying either one on the other's territory is a bug.</p>
+
+<h2 id="sec8"><span class="secnum">8</span>How the AI works</h2>
+
+<p>The computer opponents are the most surprising part of the codebase, because they are <strong>not written in C++ and are not part of the program</strong>.</p>
+
+<h3>8.1 &nbsp;AIs are downloadable scripts</h3>
+
+<p>An AI is a third-party program written in <a href="http://squirrel-lang.org/">Squirrel</a>, a small scripting language similar in feel to JavaScript or Lua. Players download AIs from an in-game content service, and several can compete in the same game. The interpreter is embedded in OpenTTD; the AIs themselves are just files.</p>
+
+<p>An AI cannot touch the world directly. It sees the game only through an API of roughly 150 classes &mdash; <code>AIStation</code>, <code>AIRail</code>, <code>AIVehicle</code>, <code>AICargo</code> and so on &mdash; and when it wants to <em>do</em> something, that call becomes a command, exactly the same command a human clicking a button would produce. This is why AI opponents obey the same rules, pay the same prices and are subject to the same failures as you are: there is no separate code path for them.</p>
+
+<h3>8.2 &nbsp;The opcode budget</h3>
+
+<p>Here is the problem the design has to solve. A downloaded script of unknown quality runs inside the game loop. If it enters an infinite loop, or spends four seconds pathfinding, the entire game freezes &mdash; and in multiplayer, every player freezes with it.</p>
+
+<p>The solution is to <strong>never let a script run to completion</strong>. Instead, the AI is given a fixed budget of virtual-machine instructions, and when the budget runs out the interpreter suspends the script mid-execution &mdash; halfway through a function, inside a loop, wherever it happens to be. The game continues. On a later tick the script is resumed exactly where it stopped.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Setting</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Default budget per slice</td><td class="num">10,000 opcodes</td></tr>
+<tr><td>Minimum / maximum</td><td class="num">500 / 250,000</td></tr>
+<tr><td>Garbage collection</td><td>One AI every 255 ticks &mdash; roughly every two in-game months each</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The script author never sees this happening. From inside the AI, the code appears to run continuously; in reality it is being frozen and thawed hundreds of times per in-game day. Overrunning the budget is tracked and charged against the next slice, so a script cannot cheat by writing one enormous instruction.</p>
+
+<h3>8.3 &nbsp;Deliberate slowness</h3>
+
+<p>A computer could issue thousands of build commands per second. That would be both unbeatable and unwatchable, so the AI is throttled twice over.</p>
+
+<p>First, <strong>every command suspends the script</strong>. Not for a budget reason &mdash; deliberately. When an AI builds a piece of track, its execution stops for at least one tick before the next instruction runs. The source comment is candid about why: it simulates multiplayer latency, and it "gives time for the GUI and human player to interact with the game."</p>
+
+<p>Second, the game's difficulty setting gates how often AIs get a slice at all:</p>
+
+<pre><code>AI::frame_counter++;
+<span class="c">// competitor_speed 4 = every tick, 3 = every 2nd, 2 = every 4th ...</span>
+<span class="k">if</span> ((AI::frame_counter &amp; ((<span class="n">1</span> &lt;&lt; (<span class="n">4</span> - competitor_speed)) - <span class="n">1</span>)) != <span class="n">0</span>) <span class="k">return</span>;
+</code></pre>
+
+<p>At the slowest setting an AI thinks once every sixteen ticks. Difficulty here is not a cheat or a handicap applied to prices &mdash; it is literally how much thinking time the opponent is granted.</p>
+
+<h3>8.4 &nbsp;Two kinds of script, and a safety net</h3>
+
+<p>The same machinery runs a second kind of script, the <strong>GameScript</strong>, which is not a competitor but a scenario director &mdash; it sets goals, awards subsidies, displays messages and shapes the rules of a particular scenario.</p>
+
+<p>The critical difference is authority. An AI is a company: it has money, owns vehicles, and its commands are charged to its account. A GameScript is a "deity": it has no company and acts on the world itself. Calling a company-scoped operation without a company is a crash.</p>
+
+<div class="callout">
+<span class="co-label">Enforced automatically</span>
+Because that mistake is easy to make and catastrophic, it is checked by a script in the project's continuous integration. Any API function that issues a command or asks which company it belongs to <em>must</em> declare which mode it requires &mdash; <code>EnforceDeityMode</code>, <code>EnforceCompanyModeValid</code>, or the variant accepting both. A function that forgets fails the build.
+</div>
+
+<h3>8.5 &nbsp;Keeping decade-old AIs alive</h3>
+
+<p>Published AIs are not maintained in step with the game, so the API is versioned &mdash; every release from <code>0.7</code> through <code>16</code> is still supported, and each script declares which version it was written against.</p>
+
+<p>The trick that makes this affordable is a set of <strong>compatibility scripts</strong>: small Squirrel files, one per old version, loaded before the AI starts. Each one patches the current API back into the shape that version expected &mdash; restoring renamed functions, re-adding removed ones, adjusting changed return values. The file for version 15 describes itself plainly: <em>"code to downgrade the API from 16 to 15."</em> Rename an API function today, and you add a line to those files so that a decade of published AIs keep working.</p>
+
+<h3>8.6 &nbsp;Following one action all the way through</h3>
+
+<p>Putting the whole chain together &mdash; here is what happens when an AI decides to build a bus station:</p>
+
+<ol>
+<li>The AI's Squirrel code calls <code>AIRoad.BuildRoadStation(tile, ...)</code>.</li>
+<li>The API layer checks it is in company mode, and validates the arguments.</li>
+<li>It builds the same command a human would generate and hands it to the command system.</li>
+<li>The command runs its test pass. If the tile is unsuitable or the company cannot afford it, an error comes straight back.</li>
+<li>In multiplayer the command is broadcast to be executed on an agreed future tick; in single-player it executes now.</li>
+<li>The script is <em>suspended</em> &mdash; execution stops mid-function.</li>
+<li>Ticks pass. Other AIs think, vehicles move, the world advances.</li>
+<li>The script resumes on the line after the call, and reads the result.</li>
+</ol>
+
+<p>Steps 3 and 4 are the reason AI code needs no special handling anywhere in the simulation. By the time the world is touched, there is nothing left to distinguish an AI's action from a human's.</p>
+
+<h2 id="sec9"><span class="secnum">9</span>Pathfinding</h2>
+
+<p>Every train, road vehicle and ship must repeatedly answer "which way now?". That work is done by <strong>YAPF</strong> &mdash; "Yet Another Path Finder", named in the tradition of having replaced two earlier attempts.</p>
+
+<p>It is an A* search, but the interesting parts are the domain details. Rail pathfinding cannot treat the map as a grid of squares: it has to reason about which <em>track direction</em> a train occupies, because a train entering a tile heading north-east has different options than one heading south. It must account for signals, reserved sections held by other trains, station platform lengths, and whether the locomotive can even use that kind of track. Results are cached aggressively, since the same junction is evaluated constantly.</p>
+
+<p>Ships get an extra layer. Open water has no track to constrain the search, so the map is first divided into large "water regions" and a coarse route between regions is found, before detailed pathfinding runs inside them &mdash; a two-level search that keeps ocean crossings affordable.</p>
+
+<h2 id="sec10"><span class="secnum">10</span>Cargo and the economy</h2>
+
+<p>Cargo is not a number in a counter. It is tracked in <strong>packets</strong>, each recording where it came from, when, and what has been paid so far:</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Field</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>count</code></td><td>How many units in this packet</td></tr>
+<tr><td><code>periods_in_transit</code></td><td>How long it has been travelling &mdash; older cargo pays less</td></tr>
+<tr><td><code>source</code>, <code>source_xy</code></td><td>Origin industry or town, and its location, for distance-based payment</td></tr>
+<tr><td><code>feeder_share</code></td><td>Money already owed to earlier legs of a multi-vehicle journey</td></tr>
+<tr><td><code>next_hop</code></td><td>Which station this cargo wants to travel to next</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>This granularity is what allows payment to depend on distance travelled and time taken, and lets a chain of vehicles each get a fair share of one delivery. It is also why a busy station holds thousands of small records rather than one integer per cargo type.</p>
+
+<p>Deciding where cargo <em>wants</em> to go is a separate and much harder problem, handled by the <strong>link graph</strong>. Your stations and routes form a network, and distributing cargo across it optimally is a multi-commodity flow problem &mdash; formally NP-hard. The game runs it on a background thread, gives it a configurable number of in-game days to finish, and uses the previous answer until it does.</p>
+
+<h2 id="sec11"><span class="secnum">11</span>Drawing the world</h2>
+
+<p>The visual style is 2D sprites in an isometric projection, and the rendering path reflects the game's age in a way that turns out to be a strength.</p>
+
+<p>A <strong>blitter</strong> is the component that actually writes pixels. OpenTTD ships several and picks one at startup: an 8-bit paletted blitter matching the original 1995 graphics, 32-bit blitters for high-colour replacement art, and hand-written variants using SSE2, SSSE3 and SSE4 processor instructions where available. All implement the same interface, so the rest of the drawing code neither knows nor cares which is in use.</p>
+
+<p>The same pattern &mdash; one interface, several implementations, chosen at runtime &mdash; is used for video output (SDL, Win32, Cocoa, OpenGL, or a null driver for headless servers), sound and music. It is what allows one codebase to run on Windows, macOS, Linux and in a web browser, and lets a dedicated server build simply select the null drivers and skip the graphics libraries entirely.</p>
+
+<p>Sprites are loaded on demand into a cache with a least-recently-used eviction policy, because the full set of graphics with mods installed does not comfortably fit in memory. The <em>viewport</em> then turns world coordinates into screen coordinates and works out the draw order &mdash; genuinely fiddly in an isometric view, where a tall building on a low tile can obscure a train behind it.</p>
+
+<h2 id="sec12"><span class="secnum">12</span>Text, settings, generated code</h2>
+
+<p>Three parts of the codebase do not exist until you build it. They are produced by small programs that run during compilation and write C++ source into the build directory.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Generated</th><th>Built by</th><th>From</th></tr></thead>
+<tbody>
+<tr><td>Every text string ID</td><td><code>strgen</code></td><td><code>src/lang/english.txt</code></td></tr>
+<tr><td>Every configurable setting</td><td><code>settingsgen</code></td><td><code>src/table/settings/*.ini</code></td></tr>
+<tr><td>Script API bindings</td><td>CMake + a template</td><td>The API headers</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Text is worth a closer look because of the scale. The game displays no literal strings &mdash; every message is an identifier like <code>STR_ERROR_FLAT_LAND_REQUIRED</code>, resolved at runtime against the player's chosen language. <code>english.txt</code> is the master list and the only one edited by hand; the other 65 languages are maintained by volunteer translators through a web service that syncs into the repository nightly.</p>
+
+<div class="callout">
+<span class="co-label">If a symbol will not resolve</span>
+When <code>STR_SOMETHING</code> or a setting name cannot be found, the fix is almost always in the source <code>.txt</code> or <code>.ini</code> file, not in the generated header &mdash; which is overwritten on every build.
+</div>
+
+<h2 id="sec13"><span class="secnum">13</span>NewGRF: rewriting the game</h2>
+
+<p>NewGRF is OpenTTD's mod system, and it is unusually deep. A NewGRF file can replace graphics, but it can also add entirely new vehicles, industries, houses, station designs and cargo types, and attach behaviour to them &mdash; production rules, availability dates, appearance varying by climate, date or surroundings.</p>
+
+<p>The format is inherited from the original game's modding scene and is essentially a small bytecode. Files are sequences of numbered "actions": action 0 sets properties on game objects, action 1 defines sprite sets, action 2 builds decision trees over them, action 3 binds those to a feature, and so on. The loader mirrors this exactly &mdash; <code>newgrf_act0.cpp</code>, <code>newgrf_act1.cpp</code>, up through <code>newgrf_act14.cpp</code>, with action 0 further split per feature because it carries the bulk of the work.</p>
+
+<p>Two consequences worth knowing. Because mods change what exists in the world, the set of loaded NewGRFs is recorded in the saved game, and loading a save without them produces the warnings players are familiar with. And because the format is a contract with content authors going back twenty years, changes to it are made about as carefully as changes to the savegame format.</p>
+
+<h2 id="sec14"><span class="secnum">14</span>Saving and loading</h2>
+
+<p>OpenTTD can still load games saved by versions from the early 2000s. Supporting that for two decades requires a strict discipline.</p>
+
+<p>The savegame version is an enumeration whose <em>position in the list</em> is the version number written into the file. The current value is 366. The rules follow directly:</p>
+
+<ul>
+<li>New entries are appended at the end, immediately before the terminator.</li>
+<li>Nothing is ever reordered or deleted &mdash; doing so silently renumbers every later version and misreads every existing file.</li>
+<li>Code that must behave differently for older files asks <code>IsSavegameVersionBefore(...)</code>.</li>
+</ul>
+
+<p>A saved game is a series of tagged chunks, each owned by the subsystem that understands it. Loading happens in two phases: chunks are read in, then a fix-up pass resolves stored numeric IDs back into usable references &mdash; necessary because a vehicle may refer to a station whose chunk had not yet been read. Finally <code>afterload.cpp</code> runs a long ordered chain of migrations, each guarded by a version check, upgrading the loaded state one version at a time until it matches what the current code expects.</p>
+
+<div class="callout warn">
+<span class="co-label">Testing this properly</span>
+Round-tripping a game you just saved proves only that the writer agrees with the reader. The real test is loading an <em>old</em> file. A save that loads but produces subtly different state is a desync waiting to happen in multiplayer.
+</div>
+
+<h2 id="sec15"><span class="secnum">15</span>Where to start reading</h2>
+
+<p>Building it, on Windows with Visual Studio and the vcpkg package manager:</p>
+
+<pre><code>cmake -B build -G <span class="p">"Visual Studio 17 2022"</span> ^
+      -DCMAKE_TOOLCHAIN_FILE=<span class="p">"...\vcpkg\scripts\buildsystems\vcpkg.cmake"</span> ^
+      -DVCPKG_TARGET_TRIPLET=<span class="p">"x64-windows-static"</span>
+cmake --build build --config RelWithDebInfo
+</code></pre>
+
+<p>There are two test suites: a small set of unit tests covering the self-contained pieces (bit maths, string handling, the network handshake), and a much more important set of <em>regression</em> tests that run the game headless, drive the scripting API against a fixed saved game, and compare the output line by line against a recorded transcript. That second suite is the real safety net, and it works precisely because the simulation is deterministic &mdash; the same map must always produce the same result.</p>
+
+<h3>Three paths in</h3>
+
+<p>Pick according to what you want to understand:</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>If you want to understand&hellip;</th><th>Read, in order</th></tr></thead>
+<tbody>
+<tr><td>The simulation</td><td><code>openttd.cpp</code> (find <code>StateGameLoop</code>) &rarr; <code>map_func.h</code> &rarr; <code>core/pool_type.hpp</code></td></tr>
+<tr><td>How an action works end to end</td><td><code>rail_gui.cpp</code> (a button) &rarr; <code>rail_cmd.h</code> &rarr; <code>rail_cmd.cpp</code></td></tr>
+<tr><td>The AI</td><td><code>ai/ai_core.cpp</code> &rarr; <code>script/script_instance.cpp</code> &rarr; any <code>script/api/script_*.cpp</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<blockquote>
+<p>A suggestion, having traced these paths: resist starting with the file whose name matches the feature you care about. Start with <code>StateGameLoop</code> and follow the calls outward. Nine times out of ten the code you were looking for is three frames down from a line in that function, and arriving at it that way tells you <em>when</em> it runs &mdash; which in a simulation matters as much as what it does.</p>
+</blockquote>
+
+<hr>
+
+<p style="color: var(--text-faint); font-size: 0.85rem;">Compiled by reading the OpenTTD source tree and its accompanying documentation &mdash; the coding style guide, the savegame format and desync notes, and the directory structure reference. Figures and code excerpts are taken from the tree as it currently stands and will drift as the project moves.</p>
+
+</main>
+</div>

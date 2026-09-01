@@ -17,8 +17,9 @@ On top of the upstream tree, this fork carries **local, untracked additions** fo
 | [opengfx-8.0/](opengfx-8.0/) | Extracted OpenGFX 8.0 base graphics set (the free replacement for the original TTD graphics) | no |
 | `opengfx-8.0.tar` | The same set as a tar, the form OpenTTD reads directly from `baseset/` | no |
 | [OpenTTD Guide.md](OpenTTD%20Guide.md) | A ~970-line beginner-to-intermediate play guide, written from the official wiki manual | no |
+| [OpenTTD Codebase Overview.html](OpenTTD%20Codebase%20Overview.html) | A self-contained illustrated tour of the codebase for a newcomer — game loop, tile map, commands, how the AI runs. Also published as an artifact | no |
 
-These are **player-facing assets and notes, not source**. Leaving them untracked is deliberate — see the fork policy below — and it is why `git status` shows untracked files on an otherwise clean checkout.
+These are **assets and notes, not source** — the graphics to run the game, a guide to playing it, and a guide to reading it. Leaving them untracked is deliberate — see the fork policy below — and it is why `git status` shows untracked files on an otherwise clean checkout.
 
 ## Fork policy: pull from upstream, never push to it
 
