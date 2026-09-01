@@ -1,0 +1,412 @@
+{
+  "artifact_bytes": {
+    "context.json": 3243851,
+    "hubs.json": 236509,
+    "report.html": 2258345,
+    "summary.md": 8420,
+    "symbols.json": 6473613
+  },
+  "artifact_dir": "C:\\Claude\\Testing\\OpenTTD\\.codemapy",
+  "counts": {
+    "cycles": 1,
+    "doc_files": 111,
+    "external_references": 1172,
+    "files": 1383,
+    "internal_dependencies": 8818,
+    "loc": 411139,
+    "metadata_files": 61,
+    "symbols": 18465
+  },
+  "files": {
+    "context": "context.json",
+    "hubs": "hubs.json",
+    "manifest": "manifest.json",
+    "report": "report.html",
+    "summary": "summary.md",
+    "symbols": "symbols.json"
+  },
+  "generated_at": "2026-08-31T19:11:09.843968+00:00",
+  "git_commit": "96651d379a94e1aceaa986b7a0c76160bdc308fc",
+  "git_dirty": true,
+  "languages": {
+    "C Header": 633,
+    "C++": 561,
+    "C++ Header": 180,
+    "JavaScript": 1,
+    "Python": 6,
+    "Shell": 2
+  },
+  "metadata_files": [
+    {
+      "kind": "project-metadata",
+      "loc": 393,
+      "path": "CMakeLists.txt",
+      "size": 16374
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 2,
+      "path": "bin/CMakeLists.txt",
+      "size": 46
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 38,
+      "path": "bin/ai/CMakeLists.txt",
+      "size": 1650
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 35,
+      "path": "bin/game/CMakeLists.txt",
+      "size": 1515
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 81,
+      "path": "media/CMakeLists.txt",
+      "size": 3652
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 80,
+      "path": "media/baseset/CMakeLists.txt",
+      "size": 3956
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 65,
+      "path": "media/baseset/openttd/CMakeLists.txt",
+      "size": 4335
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 40,
+      "path": "media/baseset/orig_extra/CMakeLists.txt",
+      "size": 2642
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 23,
+      "path": "regression/CMakeLists.txt",
+      "size": 1198
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 8,
+      "path": "regression/gs/CMakeLists.txt",
+      "size": 271
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 7,
+      "path": "regression/gs_compat/CMakeLists.txt",
+      "size": 226
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 8,
+      "path": "regression/regression/CMakeLists.txt",
+      "size": 269
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 7,
+      "path": "regression/stationlist/CMakeLists.txt",
+      "size": 224
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 9,
+      "path": "src/3rdparty/CMakeLists.txt",
+      "size": 257
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 3,
+      "path": "src/3rdparty/catch2/CMakeLists.txt",
+      "size": 30
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 18,
+      "path": "src/3rdparty/fmt/CMakeLists.txt",
+      "size": 228
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 6,
+      "path": "src/3rdparty/icu/CMakeLists.txt",
+      "size": 108
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 4,
+      "path": "src/3rdparty/icu/tests/CMakeLists.txt",
+      "size": 71
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 4,
+      "path": "src/3rdparty/md5/CMakeLists.txt",
+      "size": 39
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 6,
+      "path": "src/3rdparty/monocypher/CMakeLists.txt",
+      "size": 107
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 3,
+      "path": "src/3rdparty/nlohmann/CMakeLists.txt",
+      "size": 29
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 9,
+      "path": "src/3rdparty/opengl/CMakeLists.txt",
+      "size": 144
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 4,
+      "path": "src/3rdparty/openttd_social_integration_api/CMakeLists.txt",
+      "size": 94
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 3,
+      "path": "src/3rdparty/squirrel/CMakeLists.txt",
+      "size": 83
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 5,
+      "path": "src/3rdparty/squirrel/include/CMakeLists.txt",
+      "size": 64
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 4,
+      "path": "src/3rdparty/squirrel/sqstdlib/CMakeLists.txt",
+      "size": 52
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 29,
+      "path": "src/3rdparty/squirrel/squirrel/CMakeLists.txt",
+      "size": 467
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 598,
+      "path": "src/CMakeLists.txt",
+      "size": 11877
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 14,
+      "path": "src/ai/CMakeLists.txt",
+      "size": 230
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 44,
+      "path": "src/blitter/CMakeLists.txt",
+      "size": 890
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 36,
+      "path": "src/core/CMakeLists.txt",
+      "size": 745
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 10,
+      "path": "src/fontcache/CMakeLists.txt",
+      "size": 189
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 16,
+      "path": "src/game/CMakeLists.txt",
+      "size": 292
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 128,
+      "path": "src/lang/CMakeLists.txt",
+      "size": 5609
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 22,
+      "path": "src/linkgraph/CMakeLists.txt",
+      "size": 396
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 15,
+      "path": "src/misc/CMakeLists.txt",
+      "size": 285
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 44,
+      "path": "src/music/CMakeLists.txt",
+      "size": 791
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 40,
+      "path": "src/network/CMakeLists.txt",
+      "size": 885
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 48,
+      "path": "src/network/core/CMakeLists.txt",
+      "size": 804
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 46,
+      "path": "src/newgrf/CMakeLists.txt",
+      "size": 1134
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 3,
+      "path": "src/os/CMakeLists.txt",
+      "size": 77
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 16,
+      "path": "src/os/macosx/CMakeLists.txt",
+      "size": 320
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 18,
+      "path": "src/os/unix/CMakeLists.txt",
+      "size": 372
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 15,
+      "path": "src/os/windows/CMakeLists.txt",
+      "size": 324
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 8,
+      "path": "src/pathfinder/CMakeLists.txt",
+      "size": 153
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 24,
+      "path": "src/pathfinder/yapf/CMakeLists.txt",
+      "size": 483
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 50,
+      "path": "src/saveload/CMakeLists.txt",
+      "size": 979
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 29,
+      "path": "src/saveload/compat/CMakeLists.txt",
+      "size": 671
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 28,
+      "path": "src/script/CMakeLists.txt",
+      "size": 591
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 279,
+      "path": "src/script/api/CMakeLists.txt",
+      "size": 9851
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 20,
+      "path": "src/settingsgen/CMakeLists.txt",
+      "size": 671
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 32,
+      "path": "src/sound/CMakeLists.txt",
+      "size": 588
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 9,
+      "path": "src/spriteloader/CMakeLists.txt",
+      "size": 150
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 28,
+      "path": "src/strgen/CMakeLists.txt",
+      "size": 862
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 47,
+      "path": "src/table/CMakeLists.txt",
+      "size": 887
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 56,
+      "path": "src/table/settings/CMakeLists.txt",
+      "size": 2514
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 23,
+      "path": "src/tests/CMakeLists.txt",
+      "size": 525
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 16,
+      "path": "src/timer/CMakeLists.txt",
+      "size": 357
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 38,
+      "path": "src/video/CMakeLists.txt",
+      "size": 749
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 13,
+      "path": "src/video/cocoa/CMakeLists.txt",
+      "size": 210
+    },
+    {
+      "kind": "project-metadata",
+      "loc": 63,
+      "path": "src/widgets/CMakeLists.txt",
+      "size": 1346
+    }
+  ],
+  "notes": [
+    "Large artifacts (symbols.json). For agent context prefer summary.md, hubs.json, and the symbols.json `index` over loading the full files."
+  ],
+  "root": "C:\\Claude\\Testing\\OpenTTD",
+  "version": 2
+}
