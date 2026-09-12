@@ -1030,8 +1030,7 @@ static TileHighlightType GetTileHighlightType(TileIndex t)
 
 	if (_viewport_highlight_station_rect != nullptr) {
 		if (IsTileType(t, TileType::Station) && GetStationIndex(t) == _viewport_highlight_station_rect->index) return TileHighlightType::White;
-		const StationRect *r = &_viewport_highlight_station_rect->rect;
-		if (r->PtInExtendedRect(TileX(t), TileY(t))) return TileHighlightType::Blue;
+		if (_viewport_highlight_station_rect->spread.Contains(t)) return TileHighlightType::Blue;
 	}
 
 	if (_viewport_highlight_waypoint != nullptr) {
@@ -1040,8 +1039,7 @@ static TileHighlightType GetTileHighlightType(TileIndex t)
 
 	if (_viewport_highlight_waypoint_rect != nullptr) {
 		if (IsTileType(t, TileType::Station) && GetStationIndex(t) == _viewport_highlight_waypoint_rect->index) return TileHighlightType::White;
-		const StationRect *r = &_viewport_highlight_waypoint_rect->rect;
-		if (r->PtInExtendedRect(TileX(t), TileY(t))) return TileHighlightType::Blue;
+		if (_viewport_highlight_waypoint_rect->spread.Contains(t)) return TileHighlightType::Blue;
 	}
 
 	if (_viewport_highlight_town != nullptr) {
@@ -2514,7 +2512,7 @@ bool HandleViewportClicked(const Viewport &vp, int x, int y)
 	bool result = CheckClickOnLandscape(vp, x, y);
 
 	if (v != nullptr) {
-		Debug(misc, 2, "Vehicle {} (index {}) at {}", v->unitnumber, v->index, fmt::ptr(v));
+		Debug(Facility::Misc, Severity::Warning, "Vehicle {} (index {}) at {}", v->unitnumber, v->index, fmt::ptr(v));
 		if (IsCompanyBuildableVehicleType(v)) {
 			v = v->First();
 			if (_ctrl_pressed && v->owner == _local_company) {
@@ -3672,7 +3670,7 @@ void MarkCatchmentTilesDirty()
 	}
 
 	if (_viewport_highlight_station != nullptr) {
-		if (_viewport_highlight_station->catchment_tiles.tile == INVALID_TILE) {
+		if (_viewport_highlight_station->catchment_tiles.IsEmpty()) {
 			MarkWholeScreenDirty();
 			_viewport_highlight_station = nullptr;
 		} else {

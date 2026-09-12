@@ -308,7 +308,7 @@ protected:
 	{
 		if (!this->stations.NeedRebuild()) return;
 
-		Debug(misc, 3, "Building station list for company {}", owner);
+		Debug(Facility::Misc, Severity::Notice, "Building station list for company {}", owner);
 
 		this->stations.clear();
 		this->stations_per_cargo_type.fill(0);
@@ -738,7 +738,7 @@ public:
 	void OnGameTick() override
 	{
 		if (this->stations.NeedResort()) {
-			Debug(misc, 3, "Periodic rebuild station list company {}", static_cast<int>(this->window_number));
+			Debug(Facility::Misc, Severity::Notice, "Periodic rebuild station list company {}", static_cast<int>(this->window_number));
 			this->SetDirty();
 		}
 	}
@@ -2249,10 +2249,10 @@ static void AddNearbyStation(TileIndex tile, TileArea *ctx)
 	/* This station is (likely) a waypoint */
 	if (!T::IsValidID(sid)) return;
 
-	BaseStation *st = BaseStation::Get(sid);
+	const BaseStation *st = BaseStation::Get(sid);
 	if (st->owner != _local_company || std::ranges::find(_stations_nearby_list, sid) != _stations_nearby_list.end()) return;
 
-	if (st->rect.BeforeAddRect(ctx->tile, ctx->w, ctx->h, StationRect::ADD_TEST).Succeeded()) {
+	if (CheckStationSpread(st->spread, *ctx).Succeeded()) {
 		_stations_nearby_list.push_back(sid);
 	}
 }

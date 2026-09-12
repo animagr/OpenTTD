@@ -349,7 +349,7 @@ void GetStringWithArgs(StringBuilder &builder, StringID string, StringParameters
 				try {
 					GenerateTownNameString(builder, (string - SPECSTR_TOWNNAME_START).base(), args.GetNextParameter<uint32_t>());
 				} catch (const std::runtime_error &e) {
-					Debug(misc, 0, "GetStringWithArgs: {}", e.what());
+					Debug(Facility::Misc, Severity::Critical, "GetStringWithArgs: {}", e.what());
 					builder += "(invalid string parameter)";
 				}
 				return;
@@ -361,7 +361,7 @@ void GetStringWithArgs(StringBuilder &builder, StringID string, StringParameters
 				try {
 					if (GetSpecialNameString(builder, string, args)) return;
 				} catch (const std::runtime_error &e) {
-					Debug(misc, 0, "GetStringWithArgs: {}", e.what());
+					Debug(Facility::Misc, Severity::Critical, "GetStringWithArgs: {}", e.what());
 					builder += "(invalid string parameter)";
 					return;
 				}
@@ -1862,7 +1862,7 @@ static void FormatString(StringBuilder &builder, std::string_view str_arg, Strin
 					break;
 			}
 		} catch (std::out_of_range &e) {
-			Debug(misc, 0, "FormatString: {}", e.what());
+			Debug(Facility::Misc, Severity::Critical, "FormatString: {}", e.what());
 			builder += "(invalid parameter)";
 		}
 	}
@@ -2232,15 +2232,15 @@ static void FillLanguageList(const std::string &path)
 		/* Check whether the file is of the correct version */
 		std::string file = FS2OTTD(lmd.file.native());
 		if (!GetLanguageFileHeader(file, &lmd)) {
-			Debug(misc, 3, "{} is not a valid language file", file);
+			Debug(Facility::Misc, Severity::Notice, "{} is not a valid language file", file);
 		} else if (GetLanguage(lmd.newgrflangid) != nullptr) {
-			Debug(misc, 3, "{}'s language ID is already known", file);
+			Debug(Facility::Misc, Severity::Notice, "{}'s language ID is already known", file);
 		} else {
 			_languages.push_back(std::move(lmd));
 		}
 	}
 	if (error_code) {
-		Debug(misc, 9, "Unable to open directory {}: {}", path, error_code.message());
+		Debug(Facility::Misc, Severity::Trace3, "Unable to open directory {}: {}", path, error_code.message());
 	}
 }
 
@@ -2319,7 +2319,7 @@ void BaseStringMissingGlyphSearcher::DetermineRequiredGlyphs(FontSizes fontsizes
 
 			if (!fontsizes.Test(fs)) continue;
 			if (!IsPrintable(c) || IsTextDirectionChar(c)) continue;
-			if (c != ' ' && IsWhitespace(c)) continue;
+			if (c != ' ' && (IsWhitespace(c) || IsNonbreakingWhitespace(c))) continue;
 			if (IsInsideMM(c, SCC_SPRITE_START, SCC_SPRITE_END)) continue;
 			if (fc->MapCharToGlyph(c, false) != 0) continue;
 
@@ -2331,12 +2331,6 @@ void BaseStringMissingGlyphSearcher::DetermineRequiredGlyphs(FontSizes fontsizes
 
 /** Helper for searching through the language pack. */
 class LanguagePackGlyphSearcher : public BaseStringMissingGlyphSearcher {
-public:
-	/**
-	 * Create this language pack glyph searcher.
-	 */
-	LanguagePackGlyphSearcher() : BaseStringMissingGlyphSearcher(FONTSIZES_REQUIRED) {}
-
 private:
 	uint i; ///< Iterator for the primary language tables.
 	uint j; ///< Iterator for the secondary language tables.
@@ -2377,17 +2371,18 @@ private:
  * mean it might use characters that are not in the
  * font, which is the whole reason this check has
  * been added.
+ * @param fontsizes Font sizes to consider.
  * @param searcher  The methods to use to search for strings to check.
  *                  If nullptr the loaded language pack searcher is used.
  */
-void CheckForMissingGlyphs(MissingGlyphSearcher *searcher)
+void CheckForMissingGlyphs(FontSizes fontsizes, MissingGlyphSearcher *searcher)
 {
 	static LanguagePackGlyphSearcher pack_searcher;
 	if (searcher == nullptr) searcher = &pack_searcher;
 
-	FontCache::LoadFontCaches(searcher->fontsizes);
+	FontCache::LoadFontCaches(fontsizes);
 
-	searcher->DetermineRequiredGlyphs(searcher->fontsizes);
+	searcher->DetermineRequiredGlyphs(fontsizes);
 	bool bad_font = searcher->missing_fontsizes.Any();
 
 #if defined(WITH_FREETYPE) || defined(_WIN32) || defined(WITH_COCOA)
@@ -2418,7 +2413,7 @@ void CheckForMissingGlyphs(MissingGlyphSearcher *searcher)
 #endif
 
 	/* Update the font width cache */
-	LoadStringWidthTable(searcher->fontsizes);
+	LoadStringWidthTable(fontsizes);
 
 	if (bad_font) {
 		/* All attempts have failed. Display an error. As we do not want the string to be translated by

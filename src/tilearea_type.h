@@ -32,7 +32,24 @@ struct OrthogonalTileArea {
 
 	OrthogonalTileArea(TileIndex start, TileIndex end);
 
+	/**
+	 * Test if this tile area is empty.
+	 * @return \c true iff the tile area is empty.
+	 */
+	inline bool IsEmpty() const { return this->tile == INVALID_TILE; }
+
 	void Add(TileIndex to_add);
+
+	/**
+	 * Add another tile area to this tile area.
+	 * @param area The tile area to add.
+	 */
+	inline void Add(const OrthogonalTileArea &area)
+	{
+		/* Only the top and bottom corners need to be added. */
+		this->Add(area.tile);
+		this->Add(TileAddXY(area.tile, area.w - 1, area.h - 1));
+	}
 
 	/**
 	 * Clears the 'tile area', i.e. make the tile invalid.
@@ -143,12 +160,6 @@ public:
 	virtual TileIterator& operator ++() = 0;
 
 	/**
-	 * Allocate a new iterator that is a copy of this one.
-	 * @return A clone of this iterator.
-	 */
-	virtual std::unique_ptr<TileIterator> Clone() const = 0;
-
-	/**
 	 * Equality comparison.
 	 * @param rhs The other iterator to compare to.
 	 * @return \c true iff the tile of both iterators is the same.
@@ -215,11 +226,6 @@ public:
 		}
 		return *this;
 	}
-
-	std::unique_ptr<TileIterator> Clone() const override
-	{
-		return std::make_unique<OrthogonalTileIterator>(*this);
-	}
 };
 
 /** Iterator to iterate over a diagonal area of the map. */
@@ -254,11 +260,6 @@ public:
 	}
 
 	TileIterator& operator ++() override;
-
-	std::unique_ptr<TileIterator> Clone() const override
-	{
-		return std::make_unique<DiagonalTileIterator>(*this);
-	}
 };
 
 /**

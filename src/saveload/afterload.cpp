@@ -585,8 +585,8 @@ bool AfterLoadGame()
 	if (IsSavegameVersionBefore(SaveLoadVersion::PauseModes)) {
 		_pause_mode = (_pause_mode.base() == 2) ? PauseMode::Normal : PauseModes{};
 	} else if (_network_dedicated && _pause_mode.Test(PauseMode::Error)) {
-		Debug(net, 0, "The loading savegame was paused due to an error state");
-		Debug(net, 0, "  This savegame cannot be used for multiplayer");
+		Debug(Facility::Net, Severity::Critical, "The loading savegame was paused due to an error state");
+		Debug(Facility::Net, Severity::Critical, "  This savegame cannot be used for multiplayer");
 		/* Restore the signals */
 		ResetSignalHandlers();
 		return false;
@@ -941,7 +941,7 @@ bool AfterLoadGame()
 				if (!IsBuoy(t) && bst->owner != GetTileOwner(t)) SlErrorCorrupt("Wrong owner for station tile");
 
 				/* Set up station spread */
-				bst->rect.BeforeAddTile(t, StationRect::ADD_FORCE);
+				bst->spread.Add(t);
 
 				/* Waypoints don't have road stops/oil rigs in the old format */
 				if (!Station::IsExpected(bst)) break;
@@ -2403,7 +2403,7 @@ bool AfterLoadGame()
 			/* At some point, invalid depots were saved into the game (possibly those removed in the past?)
 			 * Remove them here, so they don't cause issues further down the line */
 			if (!IsDepotTile(tile)) {
-				Debug(sl, 0, "Removing invalid depot {} at {}, {}", d->index, TileX(d->xy), TileY(d->xy));
+				Debug(Facility::Sl, Severity::Critical, "Removing invalid depot {} at {}, {}", d->index, TileX(d->xy), TileY(d->xy));
 				delete d;
 				d = nullptr;
 				continue;
@@ -2494,7 +2494,7 @@ bool AfterLoadGame()
 	/* Oilrig was moved from id 15 to 9. */
 	if (IsSavegameVersionBefore(SaveLoadVersion::RvRealisticAcceleration)) {
 		for (Station *st : Station::Iterate()) {
-			if (st->airport.tile != INVALID_TILE && st->airport.type == 15) {
+			if (!st->airport.IsEmpty() && st->airport.type == 15) {
 				st->airport.type = AT_OILRIG;
 			}
 		}
@@ -2502,7 +2502,7 @@ bool AfterLoadGame()
 
 	if (IsSavegameVersionBefore(SaveLoadVersion::StoreAirportSize)) {
 		for (Station *st : Station::Iterate()) {
-			if (st->airport.tile != INVALID_TILE) {
+			if (!st->airport.IsEmpty()) {
 				st->airport.w = st->airport.GetSpec()->size_x;
 				st->airport.h = st->airport.GetSpec()->size_y;
 			}
@@ -3250,7 +3250,7 @@ bool AfterLoadGame()
 	if (IsSavegameVersionBefore(SaveLoadVersion::RepairObjectDockingTiles)) {
 		/* Placing objects on docking tiles was not updating adjacent station's docking tiles. */
 		for (Station *st : Station::Iterate()) {
-			if (st->ship_station.tile != INVALID_TILE) UpdateStationDockingTiles(st);
+			if (!st->ship_station.IsEmpty()) UpdateStationDockingTiles(st);
 		}
 	}
 
@@ -3434,7 +3434,7 @@ bool AfterLoadGame()
 	AfterLoadCompanyStats();
 	AfterLoadStoryBook();
 
-	_gamelog.PrintDebug(1);
+	_gamelog.PrintDebug(Severity::Error);
 
 	InitializeWindowsAndCaches();
 	/* Restore the signals */
