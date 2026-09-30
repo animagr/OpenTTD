@@ -14,13 +14,11 @@
 #include "network/network.h"
 #include "strings_func.h"
 #include "window_func.h"
+#include "textbuf_gui.h"
 #include "timer/timer_game_calendar.h"
 #include "sound_func.h"
-#include "fios.h"
-#include "string_func.h"
 #include "dropdown_type.h"
 #include "dropdown_func.h"
-#include "querystring_gui.h"
 #include "town.h"
 #include "core/geometry_func.hpp"
 #include "core/random_func.hpp"
@@ -28,7 +26,6 @@
 #include "progress.h"
 #include "error.h"
 #include "newgrf_townname.h"
-#include "townname_type.h"
 #include "video/video_driver.hpp"
 #include "ai/ai_gui.hpp"
 #include "game/game_gui.hpp"
@@ -519,9 +516,8 @@ struct GenerateLandscapeWindow : public Window {
 
 		/* You can't select smoothness / non-water borders if not terragenesis */
 		if (mode == GLWM_GENERATE) {
-			this->SetWidgetDisabledState(WID_GL_SMOOTHNESS_PULLDOWN, _settings_newgame.game_creation.land_generator == LG_ORIGINAL);
-			this->SetWidgetDisabledState(WID_GL_VARIETY_PULLDOWN, _settings_newgame.game_creation.land_generator == LG_ORIGINAL);
-			this->SetWidgetDisabledState(WID_GL_BORDERS_PULLDOWN, _settings_newgame.game_creation.land_generator == LG_ORIGINAL);
+			this->SetWidgetsDisabledState(_settings_newgame.game_creation.land_generator == LG_ORIGINAL,
+					WID_GL_AVERAGE_HEIGHT_PULLDOWN, WID_GL_SMOOTHNESS_PULLDOWN, WID_GL_VARIETY_PULLDOWN, WID_GL_BORDERS_PULLDOWN);
 			this->SetWidgetsDisabledState(_settings_newgame.game_creation.land_generator == LG_ORIGINAL || !_settings_newgame.construction.freeform_edges || _settings_newgame.game_creation.water_borders == BorderFlag::Random,
 					WID_GL_WATER_NW, WID_GL_WATER_NE, WID_GL_WATER_SE, WID_GL_WATER_SW);
 

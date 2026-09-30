@@ -10,7 +10,9 @@
 #ifndef NEWGRF_H
 #define NEWGRF_H
 
-#include "cargotype.h"
+#include "cargo_type.h"
+#include "economy_type.h"
+#include "strings_type.h"
 #include "debug_type.h"
 #include "livery.h"
 #include "rail_type.h"
@@ -239,6 +241,7 @@ void LoadNewGRF(SpriteID load_index, uint num_baseset);
 void ReloadNewGRFData(); // in saveload/afterload.cpp
 void ResetNewGRFData();
 void ResetPersistentNewGRFData();
+void ResetUnhandledVariableWarnings();
 
 void GrfMsgI(Severity severity, const std::string &msg);
 #define GrfMsg(severity, format_string, ...) do { if ((severity) == Severity::Critical || IsVisibleSeverity(Facility::Grf, (severity))) GrfMsgI(severity, fmt::format(FMT_STRING(format_string) __VA_OPT__(,) __VA_ARGS__)); } while (false)

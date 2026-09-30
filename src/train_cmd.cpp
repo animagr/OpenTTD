@@ -12,7 +12,8 @@
 #include "articulated_vehicles.h"
 #include "command_func.h"
 #include "error_func.h"
-#include "pathfinder/yapf/yapf.hpp"
+#include "pathfinder/follow_track.hpp"
+#include "pathfinder/yapf/yapf.h"
 #include "news_func.h"
 #include "company_func.h"
 #include "newgrf_sound.h"
@@ -20,20 +21,25 @@
 #include "strings_func.h"
 #include "viewport_func.h"
 #include "vehicle_func.h"
+#include "vehicle_gui.h"
 #include "sound_func.h"
 #include "ai/ai.hpp"
 #include "game/game.hpp"
 #include "newgrf_station.h"
 #include "effectvehicle_func.h"
-#include "network/network.h"
 #include "core/random_func.hpp"
 #include "company_base.h"
 #include "newgrf.h"
 #include "order_backup.h"
+#include "pbs.h"
 #include "zoom_func.h"
 #include "newgrf_debug.h"
 #include "framerate_type.h"
+#include "station_base.h"
+#include "station_func.h"
+#include "train.h"
 #include "train_cmd.h"
+#include "tunnelbridge_map.h"
 #include "misc_cmd.h"
 #include "script/api/script_event_types.hpp"
 #include "timer/timer_game_calendar.h"
@@ -197,7 +203,7 @@ void Train::ConsistChanged(ConsistChangeFlags allowed_changes)
 		uint16_t new_cap = e_u->DetermineCapacity(u);
 		if (allowed_changes.Test(ConsistChangeFlag::Capacity)) {
 			/* Update vehicle capacity. */
-			if (u->cargo_cap > new_cap) u->cargo.Truncate(new_cap);
+			if (u->cargo.TotalCount() > new_cap) u->cargo.Truncate(u->cargo.TotalCount() - new_cap);
 			u->refit_cap = std::min(new_cap, u->refit_cap);
 			u->cargo_cap = new_cap;
 		} else {
@@ -704,6 +710,7 @@ static CommandCost CmdBuildRailWagon(DoCommandFlags flags, TileIndex tile, const
 		v->refit_cap = 0;
 
 		v->railtypes = rvi->railtypes;
+		v->flags.Set(VehicleRailFlag::AllowedOnNormalRail, _settings_game.vehicle.disable_elrails && rvi->intended_railtypes.Test(RAILTYPE_ELECTRIC));
 
 		v->date_of_last_service = TimerGameEconomy::date;
 		v->date_of_last_service_newgrf = TimerGameCalendar::date;
@@ -774,6 +781,7 @@ static void AddRearEngineToMultiheadedTrain(Train *v)
 	u->cargo_cap = v->cargo_cap;
 	u->refit_cap = v->refit_cap;
 	u->railtypes = v->railtypes;
+	u->flags.Set(VehicleRailFlag::AllowedOnNormalRail, _settings_game.vehicle.disable_elrails && RailVehInfo(v->engine_type)->intended_railtypes.Test(RAILTYPE_ELECTRIC));
 	u->engine_type = v->engine_type;
 	u->date_of_last_service = v->date_of_last_service;
 	u->date_of_last_service_newgrf = v->date_of_last_service_newgrf;
@@ -841,6 +849,7 @@ CommandCost CmdBuildRailVehicle(DoCommandFlags flags, TileIndex tile, const Engi
 		v->max_age = e->GetLifeLengthInDays();
 
 		v->railtypes = rvi->railtypes;
+		v->flags.Set(VehicleRailFlag::AllowedOnNormalRail, _settings_game.vehicle.disable_elrails && rvi->intended_railtypes.Test(RAILTYPE_ELECTRIC));
 
 		v->SetServiceInterval(Company::Get(_current_company)->settings.vehicle.servint_trains);
 		v->date_of_last_service = TimerGameEconomy::date;
@@ -2270,7 +2279,7 @@ void Train::PlayLeaveStationSound(bool force) const
 		SND_41_DEPARTURE_MAGLEV
 	};
 
-	if (PlayVehicleSound(this, VSE_START, force)) return;
+	if (PlayVehicleSound(this, VehicleSoundEvent::Start, force)) return;
 
 	SndPlayVehicleFx(sfx[to_underlying(RailVehInfo(this->engine_type)->engclass)], this);
 }

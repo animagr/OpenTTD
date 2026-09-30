@@ -10,8 +10,8 @@
 #include "../stdafx.h"
 #include "../debug.h"
 #include "../saveload/saveload.h"
+#include "../saveload/saveload_error.hpp"
 
-#include "../script/squirrel_class.hpp"
 #include "../script/squirrel_std.hpp"
 
 #include "script_fatalerror.hpp"
@@ -365,7 +365,7 @@ static uint8_t _script_sl_byte; ///< Used as source/target by the script saveloa
 
 /** SaveLoad array that saves/loads exactly one byte. */
 static const SaveLoad _script_byte[] = {
-	SLEG_VAR("type", _script_sl_byte, VarTypes::U8),
+	SaveLoad::Variable<VarFileType::U8>("type", SLE_GLOBAL_ADDRESS(_script_sl_byte)),
 };
 
 /* static */ bool ScriptInstance::SaveObject(HSQUIRRELVM vm, SQInteger index, int max_depth, bool test)
@@ -603,7 +603,7 @@ bool ScriptInstance::IsPaused()
 	switch (_script_sl_byte) {
 		case SQSL_INT: {
 			int64_t value;
-			SlCopy(&value, 1, IsSavegameVersionBefore(SaveLoadVersion::ScriptInt64) ? VarFileType::I32 | VarMemType::I64 : VarTypes::I64);
+			SlCopy(&value, 1, IsSavegameVersionBefore(SaveLoadVersion::ScriptInt64) ? VarType{VarFileType::I32, VarMemType::I64} : VarTypes::I64);
 			if (data != nullptr) data->push_back(static_cast<SQInteger>(value));
 			return true;
 		}
